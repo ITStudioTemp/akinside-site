@@ -47,13 +47,17 @@ else {
   }
   if (projectLinks.some(link => /^https?:\/\/(?:www\.)?akinside\.com\/?(?:[?#].*)?$/i.test(link.href || ''))) errors.push('Project section must not link to the current site');
 }
-const toggle = tags.find(([,name,raw]) => name.toLowerCase() === 'button' && attrs(raw).id === 'inside-toggle');
-if (!toggle || !Object.hasOwn(attrs(toggle[2]), 'hidden')) errors.push('inside-toggle must be hidden in HTML for the no-JavaScript fallback');
-
-const fallback = tags.find(([,name,raw]) => name.toLowerCase() === 'input' && attrs(raw).id === 'inside-fallback');
-if (!fallback || attrs(fallback[2]).type !== 'checkbox' || !Object.hasOwn(attrs(fallback[2]), 'checked') || Object.hasOwn(attrs(fallback[2]), 'hidden') || Object.hasOwn(attrs(fallback[2]), 'disabled')) errors.push('No-JS illustration control must be an enabled, checked checkbox');
-const fallbackLabel = tags.find(([,name,raw]) => name.toLowerCase() === 'label' && attrs(raw).id === 'inside-fallback-label');
-if (!fallbackLabel || attrs(fallbackLabel[2]).for !== 'inside-fallback' || Object.hasOwn(attrs(fallbackLabel[2]), 'hidden')) errors.push('No-JS illustration control must have a visible associated label');
+const illustration = html.match(/<div class="inspection">([\s\S]*?)<ol class="inspection-stages"/i);
+if (!illustration) errors.push('Missing illustration controls');
+else {
+  const controls = [...illustration[1].matchAll(/<(input|button|label)\b([^<>]*?)>/gi)]
+    .map(([, name, raw]) => ({ name: name.toLowerCase(), ...attrs(raw) }));
+  const checkbox = controls.filter(control => control.name === 'input');
+  const labels = controls.filter(control => control.name === 'label');
+  if (checkbox.length !== 1 || checkbox[0].id !== 'inside-fallback' || checkbox[0].type !== 'checkbox' || Object.hasOwn(checkbox[0], 'hidden') || Object.hasOwn(checkbox[0], 'disabled')) errors.push('Illustration must have one enabled native checkbox');
+  if (labels.length !== 1 || labels[0].for !== 'inside-fallback' || Object.hasOwn(labels[0], 'hidden')) errors.push('Illustration must have one visible associated label');
+  if (controls.some(control => control.name === 'button')) errors.push('Illustration must not have a second control');
+}
 
 const checked = new Set();
 function checkResource(ref, from) {

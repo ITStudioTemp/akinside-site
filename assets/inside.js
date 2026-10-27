@@ -1,29 +1,5 @@
 (() => {
   function initialise() {
-    const illustration = document.getElementById('inspection');
-    const toggle = document.getElementById('inside-toggle');
-    if (illustration && toggle) {
-      const toggleLabel = toggle.querySelector('.action-label');
-      function setMode(inside) {
-        illustration.dataset.insideMode = inside ? 'inside' : 'surface';
-        toggle.setAttribute('aria-pressed', String(inside));
-        if (toggleLabel) toggleLabel.textContent = inside ? 'Вернуться к внешнему виду' : 'Показать изнутри';
-      }
-
-      const fallback = document.getElementById('inside-fallback');
-      const fallbackLabel = document.getElementById('inside-fallback-label');
-      if (fallback && fallbackLabel) {
-        fallback.disabled = true;
-        fallback.hidden = true;
-        fallbackLabel.hidden = true;
-      }
-      setMode(false);
-      toggle.hidden = false;
-      toggle.addEventListener('click', () => {
-        setMode(illustration.dataset.insideMode !== 'inside');
-      });
-    }
-
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
         typeof window.requestAnimationFrame === 'function' && typeof document.querySelectorAll === 'function') {
       const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');

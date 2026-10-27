@@ -11,7 +11,7 @@
 
   function buildGrid(width, height) {
     const mobile = width < 600;
-    const spacing = 30;
+    const spacing = 23;
     const size = 7;
     const origin = { x: width * .88, y: height * .5 };
     const maxDistance = Math.hypot(Math.max(origin.x, width - origin.x), height / 2) || 1;
@@ -33,7 +33,7 @@
     const spread = mobile
       ? Math.max(100, Math.min(150, Math.hypot(width, height) * .15))
       : Math.max(220, Math.min(460, Math.hypot(width, height) * .24));
-    return { nodes, links, origin, size, mobile, spread };
+    return { nodes, links, origin, size, spacing, mobile, spread };
   }
 
   function nodeState(node, progress, field) {
@@ -62,8 +62,8 @@
   }
 
   function scrollProgress(scrollY, documentHeight, viewportHeight) {
-    const scrollable = Math.max(0, documentHeight - viewportHeight);
-    return scrollable ? clamp(scrollY / scrollable) : 0;
+    const scrollable = Math.max(1, documentHeight - viewportHeight);
+    return clamp(scrollY / scrollable);
   }
 
   function mount(win) {
@@ -93,7 +93,7 @@
     function draw() {
       frame = null;
       if (!field || !visible) return;
-      const documentHeight = Math.max(doc.documentElement.scrollHeight, doc.body ? doc.body.scrollHeight : 0);
+      const documentHeight = doc.documentElement.scrollHeight;
       const progress = reduced.matches ? 0 : scrollProgress(win.scrollY, documentHeight, win.innerHeight);
       ctx.clearRect(0, 0, win.innerWidth, win.innerHeight);
       ctx.lineWidth = 1;
@@ -109,14 +109,14 @@
         const state = connectionState(link, progress);
         if (state.opacity <= 0) return;
         const flashing = state.flash > .02;
-        const alpha = state.opacity * (flashing ? .20 + state.flash * .05 : .30);
+        const alpha = state.opacity * (flashing ? .20 + state.flash * .05 : .20);
         const bucket = Math.round(alpha * bins);
         if (bucket) (flashing ? linkFlashPaths : linkPaths)[bucket].push(link);
       });
       field.nodes.forEach(node => {
         const state = nodeState(node, progress, field);
         const flashing = state.flash > .02;
-        const alpha = state.opacity * (flashing ? .20 + state.flash * .05 : .30);
+        const alpha = state.opacity * (flashing ? .20 + state.flash * .05 : .20);
         const bucket = Math.round(alpha * bins);
         if (bucket) (flashing ? nodeFlashPaths : nodePaths)[bucket].push(state);
       });
@@ -167,6 +167,11 @@
     doc.addEventListener('visibilitychange', visibility);
     if (typeof reduced.addEventListener === 'function') reduced.addEventListener('change', schedule);
     else if (typeof reduced.addListener === 'function') reduced.addListener(schedule);
+    if (typeof win.ResizeObserver === 'function') {
+      const observer = new win.ResizeObserver(schedule);
+      observer.observe(doc.documentElement);
+      if (doc.body) observer.observe(doc.body);
+    }
     resize();
   }
 

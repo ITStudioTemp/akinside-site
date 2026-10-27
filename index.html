@@ -35,7 +35,7 @@
   </header>
 
   <main id="main">
-    <section class="hero layout" id="inspection" data-inside-mode="inside" aria-labelledby="hero-title">
+    <section class="hero layout" id="inspection" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="hero-kicker">AKinside. Студия разработки и проверки качества</p>
         <h1 id="hero-title">Разбираемся,<br>как всё <span>работает.</span></h1>
@@ -44,7 +44,7 @@
       </div>
       <div class="inspection">
         <div class="inspection-title"><p>Внутри системы</p><span>Условная иллюстрация</span></div>
-        <input class="inside-fallback" id="inside-fallback" type="checkbox" checked aria-label="Внутренняя структура" aria-describedby="inspection-explanation">
+        <input class="inside-fallback" id="inside-fallback" type="checkbox" aria-describedby="inspection-explanation">
         <div class="inspection-visual" aria-hidden="true">
           <svg viewBox="0 0 720 550" focusable="false" xmlns="http://www.w3.org/2000/svg">
             <g class="draft-lines" fill="none" stroke="currentColor" stroke-width="1">
@@ -69,8 +69,7 @@
         </div>
         <div class="inspection-controls">
           <p id="inspection-explanation">Один взгляд снаружи и то, что происходит внутри.</p>
-          <label class="action-link action-quiet inside-fallback-label" id="inside-fallback-label" for="inside-fallback"><span class="action-label"><span class="fallback-on" aria-hidden="true">Вернуться к внешнему виду</span><span class="fallback-off" aria-hidden="true">Показать изнутри</span></span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></label>
-          <button class="action-link action-quiet inside-toggle" id="inside-toggle" type="button" aria-pressed="true" aria-describedby="inspection-explanation" hidden><span class="action-label">Показать изнутри</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></button>
+          <label class="action-link action-quiet inside-fallback-label" id="inside-fallback-label" for="inside-fallback"><span class="action-label"><span class="fallback-on">Вернуться к внешнему виду</span><span class="fallback-off">Показать изнутри</span></span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></label>
         </div>
         <ol class="inspection-stages" aria-label="Условный путь работы"><li>Проблема</li><li>Диагностика</li><li>Исправление</li><li>Проверка</li></ol>
       </div>

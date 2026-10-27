@@ -6,90 +6,35 @@ const vm = require('node:vm');
 
 const scriptPath = path.join(__dirname, '..', 'assets', 'inside.js');
 
-function element(attributes = {}) {
-  const attrs = { ...attributes };
-  const listeners = {};
-  return {
-    hidden: Object.hasOwn(attrs, 'hidden'),
-    textContent: '',
-    dataset: new Proxy({}, {
-      get: (_, key) => attrs[`data-${String(key).replace(/[A-Z]/g, char => `-${char.toLowerCase()}`)}`],
-      set: (_, key, value) => {
-        attrs[`data-${String(key).replace(/[A-Z]/g, char => `-${char.toLowerCase()}`)}`] = String(value);
-        return true;
-      },
-    }),
-    setAttribute(name, value) { attrs[name] = String(value); if (name === 'hidden') this.hidden = true; },
-    getAttribute(name) { return Object.hasOwn(attrs, name) ? attrs[name] : null; },
-    removeAttribute(name) { delete attrs[name]; if (name === 'hidden') this.hidden = false; },
-    addEventListener(type, listener) { (listeners[type] ||= []).push(listener); },
-    click() { for (const listener of listeners.click || []) listener({ currentTarget: this }); },
-  };
-}
-
-function run({ section = element({ 'data-inside-mode': 'inside' }), button = element({ hidden: '', 'aria-pressed': 'true' }), readyState = 'complete' } = {}) {
-  assert.ok(fs.existsSync(scriptPath), 'assets/inside.js should exist');
-  const label = element();
-  if (button) {
-    button.textContent = 'arrow markup';
-    button.querySelector = selector => selector === '.action-label' ? label : null;
-  }
-  const fallback = element();
-  fallback.checked = true;
-  fallback.disabled = false;
-  const fallbackLabel = element();
-  const nodes = { inspection: section, 'inside-toggle': button, 'inside-fallback': fallback, 'inside-fallback-label': fallbackLabel };
-  const listeners = {};
-  const document = {
-    readyState,
-    getElementById(id) { return nodes[id] || null; },
-    querySelector(selector) { return selector.startsWith('#') ? nodes[selector.slice(1)] || null : null; },
-    addEventListener(type, listener) { (listeners[type] ||= []).push(listener); },
-  };
-  vm.runInNewContext(fs.readFileSync(scriptPath, 'utf8'), { document }, { filename: scriptPath });
-  return { section, button, label, fallback, fallbackLabel, dispatchReady() { for (const listener of listeners.DOMContentLoaded || []) listener(); } };
-}
-
-test('initializes visible control in surface mode and switches repeatedly', () => {
-  const { section, button, label, fallback, fallbackLabel } = run();
-  assert.equal(section.dataset.insideMode, 'surface');
-  assert.equal(button.hidden, false);
-  assert.equal(fallback.disabled, true, 'fallback cannot override enhanced mode');
-  assert.equal(fallback.hidden, true);
-  assert.equal(fallbackLabel.hidden, true);
-  assert.equal(button.getAttribute('aria-pressed'), 'false');
-  assert.equal(label.textContent.trim(), 'Показать изнутри');
-
-  assert.equal(button.textContent, 'arrow markup', 'mode changes preserve the arrow elements');
-  button.click();
-  assert.equal(section.dataset.insideMode, 'inside');
-  assert.equal(button.getAttribute('aria-pressed'), 'true');
-  assert.equal(label.textContent.trim(), 'Вернуться к внешнему виду');
-  assert.equal(button.textContent, 'arrow markup', 'toggling preserves the arrow elements');
-
-  button.click();
-  assert.equal(section.dataset.insideMode, 'surface');
-  assert.equal(button.getAttribute('aria-pressed'), 'false');
-  assert.equal(label.textContent.trim(), 'Показать изнутри');
+test('illustration has one native checkbox and one associated label in every mode', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const area = html.match(/<div class="inspection">([\s\S]*?)<ol class="inspection-stages"/)[1];
+  assert.equal((area.match(/<input\b/gi) || []).length, 1);
+  assert.equal((area.match(/<label\b/gi) || []).length, 1);
+  assert.equal((area.match(/<button\b/gi) || []).length, 0);
+  assert.match(area, /<input[^>]*id="inside-fallback"[^>]*type="checkbox"/);
+  assert.match(area, /<label[^>]*for="inside-fallback"/);
+  assert.doesNotMatch(area, /<span class="fallback-(?:on|off)" aria-hidden/);
+  assert.doesNotMatch(area, /<input[^>]*(?:disabled|hidden)(?:\s|>|=)/);
+  const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'style.css'), 'utf8');
+  assert.match(css, /\.inside-fallback\s*\{[^}]*position:\s*absolute/);
+  assert.doesNotMatch(css.match(/\.inside-fallback\s*\{([^}]*)\}/)[1], /grid-area/);
+  assert.match(css, /#inside-fallback:focus-visible\s*~\s*\.inspection-controls/);
+  assert.doesNotMatch(css, /data-inside-mode/);
 });
 
-test('waits for DOM readiness when the document is loading', () => {
-  const { section, button, fallback, fallbackLabel, dispatchReady } = run({ readyState: 'loading' });
-  assert.equal(section.dataset.insideMode, 'inside');
-  assert.equal(button.hidden, true);
-  assert.equal(fallback.checked, true);
-  assert.equal(fallback.disabled, false);
-  assert.equal(fallback.hidden, false);
-  assert.equal(fallbackLabel.hidden, false);
-  dispatchReady();
-  assert.equal(section.dataset.insideMode, 'surface');
-  assert.equal(button.hidden, false);
-});
-
-test('does not throw when either required element is missing', () => {
-  assert.doesNotThrow(() => run({ section: null }));
-  assert.doesNotThrow(() => run({ button: null }));
-  assert.doesNotThrow(() => run({ section: null, button: null }));
+test('CSS keeps the visible instruction and SVG state aligned with the checkbox', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'style.css'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const js = fs.readFileSync(scriptPath, 'utf8');
+  assert.match(html, /class="fallback-on">Вернуться к внешнему виду/);
+  assert.match(html, /class="fallback-off">Показать изнутри/);
+  assert.match(css, /\.fallback-off\s*\{\s*display:\s*none/);
+  assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-controls\s+\.fallback-on\s*\{\s*display:\s*none/);
+  assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-controls\s+\.fallback-off\s*\{\s*display:\s*inline/);
+  assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-visual\s+\.layer\s*\{\s*opacity:\s*0/);
+  assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-visual\s+\.connections\s*\{\s*opacity:\s*0/);
+  assert.doesNotMatch(js, /inside-fallback|inside-toggle|insideMode/);
 });
 
 test('process follows the viewport, clamps progress and batches scroll updates', () => {

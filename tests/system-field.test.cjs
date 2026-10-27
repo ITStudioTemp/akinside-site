@@ -20,29 +20,30 @@ test('the field begins as connected hollow modules and ends dispersed', () => {
   assert.ok(field.links.every(link => connectionState(link, 1, field).opacity === 0));
 });
 
-test('squares measure 7px with 23px edge gaps at all viewport widths', () => {
-  for (const width of [360, 768, 1280, 1440, 1920]) {
+test('squares measure 7px with 23px centre spacing at all viewport widths', () => {
+  for (const width of [360, 390, 650, 768, 1024, 1280, 1440, 1920]) {
     const field = buildGrid(width, 800);
     assert.equal(field.size, 7);
+    assert.equal(field.spacing, 23);
     const horizontal = field.links.find(link => link.horizontal);
     const vertical = field.links.find(link => !link.horizontal);
-    assert.equal(horizontal.b.x - horizontal.a.x, 30);
-    assert.equal(horizontal.b.x - horizontal.a.x - field.size, 23);
-    assert.equal(vertical.b.y - vertical.a.y - field.size, 23);
+    assert.equal(horizontal.b.x - horizontal.a.x, 23);
+    assert.equal(horizontal.b.x - horizontal.a.x - field.size, 16);
+    assert.equal(vertical.b.y - vertical.a.y, 23);
     assert.ok(field.links.length > field.nodes.length);
   }
 });
 
-test('the static fallback uses the same square size, edge gap and colour intensity', () => {
+test('the static fallback uses the same square size, centre spacing and colour intensity', () => {
   const asset = name => fs.readFileSync(path.join(__dirname, '../assets', name), 'utf8');
   const svg = asset('system-field.svg');
   const css = asset('system-field.css');
-  assert.match(css, /background-size:\s*30px 30px/);
-  assert.match(svg, /viewBox="0 0 30 30"/);
-  assert.match(svg, /x="11\.5" y="11\.5" width="7" height="7"/);
-  assert.match(svg, /M0 15H11\.5M18\.5 15H30M15 0V11\.5M15 18\.5V30/);
-  assert.match(svg, /stroke-opacity="\.30"/);
-  assert.equal((svg.match(/stroke-opacity="\.30"/g) || []).length, 2);
+  assert.match(css, /background-size:\s*23px 23px/);
+  assert.match(svg, /viewBox="0 0 23 23"/);
+  assert.match(svg, /x="8" y="8" width="7" height="7"/);
+  assert.match(svg, /M0 11\.5H8M15 11\.5H23M11\.5 0V8M11\.5 15V23/);
+  assert.match(svg, /stroke-opacity="\.20"/);
+  assert.equal((svg.match(/stroke-opacity="\.20"/g) || []).length, 2);
 });
 
 test('cyan rupture precedes module displacement and dispersed modules separate significantly', () => {
@@ -75,7 +76,9 @@ test('canvas redraws on demand, respects reduced motion, resize and tab visibili
   const host = { querySelector: () => canvas, classList: { add: value => classes.add(value) } };
   const motion = { matches: false, ...events('motion') };
   const doc = { hidden: false, documentElement: { scrollHeight: 4800 }, body: { scrollHeight: 4800 }, querySelector: () => host, ...events('document') };
+  let heightChange;
   const win = {
+    ResizeObserver: class { constructor(callback) { heightChange = callback; } observe() {} },
     document: doc, innerWidth: 360, innerHeight: 800, scrollY: 0,
     devicePixelRatio: 4, matchMedia: () => motion,
     requestAnimationFrame(callback) { pending.push(callback); return pending.length; },
@@ -105,16 +108,16 @@ test('canvas redraws on demand, respects reduced motion, resize and tab visibili
   assert.ok(lineColors.some(color => color.startsWith('rgba(75, 219, 238,')), 'rupturing links draw in cyan');
   assert.ok(lineColors.every(color => {
     const alpha = Number(color.match(/, ([0-9.]+)\)$/)[1]);
-    return alpha <= (color.startsWith('rgba(75, 219, 238,') ? .25 : .30);
+    return alpha <= (color.startsWith('rgba(75, 219, 238,') ? .25 : .20);
   }), 'cyan and static strokes stay below the readability limits');
   assert.equal(pending.length, 0, 'draw does not start an animation loop');
 
   const atOriginalLength = squares.map(square => [...square]);
   doc.documentElement.scrollHeight = 6800;
   doc.body.scrollHeight = 6800;
-  listeners['window:scroll']();
+  heightChange();
   runFrame();
-  assert.notDeepEqual(squares, atOriginalLength, 'progress uses the current document length');
+  assert.notDeepEqual(squares, atOriginalLength, 'document height changes trigger a redraw');
 
   motion.matches = true;
   listeners['motion:change']();
@@ -166,7 +169,7 @@ test('scroll mapping spans the whole document and reverses deterministically', (
   assert.equal(scrollProgress(0, documentHeight, viewportHeight), 0);
   assert.equal(scrollProgress(2800, documentHeight, viewportHeight), .7);
   assert.equal(scrollProgress(4000, documentHeight, viewportHeight), 1);
-  assert.equal(scrollProgress(100, 800, 800), 0);
+  assert.equal(scrollProgress(100, 800, 800), 1);
   assert.deepEqual(back, before);
   assert.ok(further.displacement > before.displacement);
   const farthest = field.nodes.reduce((a, b) => a.distance > b.distance ? a : b);
@@ -179,4 +182,29 @@ test('scroll mapping spans the whole document and reverses deterministically', (
   assert.equal(nodeState(farthest, 1, field).displacement, field.spread);
   assert.ok(scrollProgress(1000, 6800, 800) < scrollProgress(1000, 4800, 800),
     'document length affects progress');
+});
+
+
+test('full-page scrolling steadily breaks connections and separates squares reversibly', () => {
+  const field = buildGrid(1440, 900);
+  const scrollable = 6300;
+  const measure = fraction => {
+    const progress = scrollProgress(fraction * scrollable, scrollable + 900, 900);
+    return {
+      connected: field.links.filter(link => connectionState(link, progress).opacity > 0).length,
+      moving: field.nodes.filter(node => nodeState(node, progress, field).displacement > 0).length,
+      complete: field.nodes.filter(node => nodeState(node, progress, field).displacement === field.spread).length
+    };
+  };
+  const snapshots = [0, .25, .5, .75, 1].map(measure);
+  assert.equal(snapshots[0].connected, field.links.length);
+  assert.equal(snapshots[0].moving, 0);
+  for (let i = 1; i < snapshots.length; i++) {
+    assert.ok(snapshots[i].connected <= snapshots[i - 1].connected);
+    assert.ok(snapshots[i].moving > snapshots[i - 1].moving || snapshots[i].complete > snapshots[i - 1].complete);
+  }
+  assert.ok(snapshots[3].complete < field.nodes.length, 'movement continues past 75%');
+  assert.equal(snapshots[4].connected, 0);
+  assert.equal(snapshots[4].complete, field.nodes.length);
+  assert.deepEqual([1, .75, .5, .25, 0].map(measure), [...snapshots].reverse());
 });
