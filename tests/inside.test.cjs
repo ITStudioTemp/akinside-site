@@ -73,3 +73,59 @@ test('does not throw when either required element is missing', () => {
   assert.doesNotThrow(() => run({ button: null }));
   assert.doesNotThrow(() => run({ section: null, button: null }));
 });
+
+test('process follows the viewport, clamps progress and batches scroll updates', () => {
+  let scrollY = 600;
+  let frames = [];
+  const events = {};
+  const positions = [1000, 1200, 1400];
+  const steps = positions.map((position, index) => {
+    const classes = new Set();
+    const marker = { getBoundingClientRect() { return { top: position - scrollY - 10.7 }; } };
+    return {
+      classes,
+      classList: { toggle(name, active) { active ? classes.add(name) : classes.delete(name); } },
+      getBoundingClientRect() { return { top: position - scrollY - 10.7, height: 80 + index * 40 }; },
+      querySelector(selector) { return selector === 'span' ? marker : null; },
+    };
+  });
+  const properties = {};
+  const list = {
+    querySelectorAll(selector) { return selector === 'li' ? steps : []; },
+    getBoundingClientRect() { return { top: 980 - scrollY }; },
+    style: { setProperty(name, value) { properties[name] = value; } },
+  };
+  const document = {
+    readyState: 'complete',
+    getElementById() { return null; },
+    querySelector(selector) { return selector === '.work-steps' ? list : null; },
+  };
+  const window = {
+    innerHeight: 800,
+    getComputedStyle() { return { top: '7.2px', height: '7px' }; },
+    addEventListener(type, listener, options) { events[type] = { listener, options }; },
+    requestAnimationFrame(callback) { frames.push(callback); },
+  };
+  const flush = () => { const pending = frames; frames = []; pending.forEach(callback => callback()); };
+  vm.runInNewContext(fs.readFileSync(scriptPath, 'utf8'), { document, window }, { filename: scriptPath });
+  flush();
+  assert.equal(Number(properties['--progress']), 0);
+  assert.ok(Math.abs(parseFloat(properties['--track-start']) - 20) < 0.001);
+  assert.ok(Math.abs(parseFloat(properties['--track-length']) - 400) < 0.001);
+  assert.deepEqual(steps.map(step => step.classes.has('is-active')), [true, false, false]);
+  assert.equal(events.scroll.options.passive, true);
+
+  scrollY = 800;
+  events.scroll.listener();
+  events.scroll.listener();
+  assert.equal(frames.length, 1, 'scroll updates share a frame');
+  flush();
+  assert.equal(Number(properties['--progress']), 0.5);
+  assert.deepEqual(steps.map(step => step.classes.has('is-active')), [false, true, false]);
+
+  scrollY = 1600;
+  events.resize.listener();
+  flush();
+  assert.equal(Number(properties['--progress']), 1);
+  assert.deepEqual(steps.map(step => step.classes.has('is-active')), [false, false, true]);
+});
