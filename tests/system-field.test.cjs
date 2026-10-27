@@ -13,9 +13,30 @@ test('the field begins as connected hollow modules and ends dispersed', () => {
     assert.equal(before.y, node.y);
     assert.equal(before.opacity, 1);
     assert.ok(after.displacement > 0);
-    assert.ok(after.opacity >= .35 && after.opacity <= .5);
+    assert.ok(after.opacity >= .5 && after.opacity <= .6);
   }
   assert.ok(field.links.every(link => connectionState(link, 1, field).opacity === 0));
+});
+
+test('connected modules form a denser field on desktop and mobile', () => {
+  const desktop = buildGrid(1200, 800);
+  const mobile = buildGrid(360, 800);
+  assert.ok(desktop.nodes.length >= 230, 'desktop contains a connected structure, not a sparse pattern');
+  assert.ok(mobile.nodes.length >= 100, 'mobile retains a visible structure');
+  for (const field of [desktop, mobile]) {
+    assert.ok(field.size >= 14);
+    assert.ok(field.links.length > field.nodes.length);
+  }
+});
+
+test('cyan rupture precedes module displacement and dispersed modules separate significantly', () => {
+  const field = buildGrid(1200, 800);
+  const closest = field.nodes.reduce((a, b) => a.distance < b.distance ? a : b);
+  const link = field.links.find(item => item.a === closest || item.b === closest);
+  const rupture = connectionState(link, Math.min(link.a.onset, link.b.onset) + .065);
+  assert.ok(rupture.flash > .5, 'a breaking connection has a short cyan flash');
+  assert.equal(nodeState(closest, Math.min(link.a.onset, link.b.onset) + .065, field).displacement, 0);
+  assert.ok(nodeState(closest, 1, field).displacement >= 220);
 });
 
 test('canvas redraws on demand, respects reduced motion, resize and tab visibility', () => {
@@ -26,10 +47,11 @@ test('canvas redraws on demand, respects reduced motion, resize and tab visibili
   const pending = [];
   let transforms = [];
   let squares = [];
+  let lineColors = [];
   const ctx = {
     setTransform(...args) { transforms.push(args); },
-    clearRect() { squares = []; },
-    beginPath() {}, moveTo() {}, lineTo() {}, stroke() {},
+    clearRect() { squares = []; lineColors = []; },
+    beginPath() {}, moveTo() {}, lineTo() {}, stroke() { lineColors.push(this.strokeStyle); },
     strokeRect(x, y, w, h) { squares.push([x, y, w, h]); }
   };
   const canvas = { getContext: () => ctx };
@@ -62,6 +84,7 @@ test('canvas redraws on demand, respects reduced motion, resize and tab visibili
   assert.equal(pending.length, 1, 'scroll events share one animation frame');
   runFrame();
   assert.notDeepEqual(squares, initial);
+  assert.ok(lineColors.some(color => color.startsWith('rgba(75, 219, 238,')), 'rupturing links draw in cyan');
   assert.equal(pending.length, 0, 'draw does not start an animation loop');
 
   motion.matches = true;

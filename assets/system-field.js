@@ -11,8 +11,8 @@
 
   function buildGrid(width, height) {
     const mobile = width < 600;
-    const spacing = mobile ? 68 : 84;
-    const size = mobile ? 13 : 16;
+    const spacing = mobile ? 56 : 64;
+    const size = mobile ? 16 : 18;
     const origin = { x: width * .88, y: height * .5 };
     const maxDistance = Math.hypot(Math.max(origin.x, width - origin.x), height / 2) || 1;
     const nodes = [];
@@ -30,7 +30,10 @@
         if (row) links.push({ a: nodes[nodes.length - 1 - columns], b: node, horizontal: false });
       }
     }
-    return { nodes, links, origin, size, mobile };
+    const spread = mobile
+      ? Math.max(100, Math.min(150, Math.hypot(width, height) * .15))
+      : Math.max(220, Math.min(460, Math.hypot(width, height) * .24));
+    return { nodes, links, origin, size, mobile, spread };
   }
 
   function nodeState(node, progress, field) {
@@ -42,19 +45,20 @@
     // The centre module gets a stable direction too, never a divide-by-zero jump.
     const ux = distance < 1 ? 1 : dx / distance;
     const uy = distance < 1 ? 0 : dy / distance;
-    const displacement = movement * (field.mobile ? 56 : 130);
+    const displacement = movement * field.spread;
     return {
       x: node.x + ux * displacement,
       y: node.y + uy * displacement,
       displacement,
-      opacity: 1 - movement * .6,
+      opacity: 1 - movement * .45,
       flash: Math.sin(phase * Math.PI)
     };
   }
 
   function connectionState(link, progress) {
     const onset = Math.min(link.a.onset, link.b.onset);
-    return { opacity: 1 - ease((progress - onset) / .13) };
+    const phase = clamp((progress - onset) / .13);
+    return { opacity: 1 - ease(phase), flash: Math.sin(phase * Math.PI) };
   }
 
   function scrollProgress(scrollY, height) {
@@ -93,9 +97,11 @@
       ctx.lineWidth = 1;
       const half = field.size / 2;
       field.links.forEach(link => {
-        const opacity = connectionState(link, progress).opacity;
-        if (opacity <= 0) return;
-        ctx.strokeStyle = `rgba(79, 139, 184, ${opacity * .35})`;
+        const state = connectionState(link, progress);
+        if (state.opacity <= 0) return;
+        ctx.strokeStyle = state.flash > .02
+          ? `rgba(75, 219, 238, ${state.opacity * (.48 + state.flash * .32)})`
+          : `rgba(79, 139, 184, ${state.opacity * .48})`;
         ctx.beginPath();
         if (link.horizontal) {
           ctx.moveTo(link.a.x + half, link.a.y);
@@ -110,8 +116,8 @@
         const state = nodeState(node, progress, field);
         const flash = state.flash;
         ctx.strokeStyle = flash > .02
-          ? `rgba(75, 219, 238, ${state.opacity * (.38 + flash * .34)})`
-          : `rgba(98, 155, 196, ${state.opacity * .48})`;
+          ? `rgba(75, 219, 238, ${state.opacity * (.64 + flash * .3)})`
+          : `rgba(98, 155, 196, ${state.opacity * .64})`;
         ctx.strokeRect(state.x - half, state.y - half, field.size, field.size);
       });
       host.classList.add('is-rendered');
