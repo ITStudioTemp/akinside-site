@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 168" fill="none">
+  <g stroke="#4f8bb8" stroke-opacity=".35" stroke-width="1">
+    <path d="M50 42H118M134 42H168M0 42H34M50 126H118M134 126H168M0 126H34M42 50V118M42 134V168M42 0V34M126 50V118M126 134V168M126 0V34"/>
+  </g>
+  <g stroke="#629bc4" stroke-opacity=".48" stroke-width="1">
+    <rect x="34" y="34" width="16" height="16"/><rect x="118" y="34" width="16" height="16"/>
+    <rect x="34" y="118" width="16" height="16"/><rect x="118" y="118" width="16" height="16"/>
+  </g>
+</svg>

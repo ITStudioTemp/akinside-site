@@ -29,6 +29,11 @@ function element(attributes = {}) {
 
 function run({ section = element({ 'data-inside-mode': 'inside' }), button = element({ hidden: '', 'aria-pressed': 'true' }), readyState = 'complete' } = {}) {
   assert.ok(fs.existsSync(scriptPath), 'assets/inside.js should exist');
+  const label = element();
+  if (button) {
+    button.textContent = 'arrow markup';
+    button.querySelector = selector => selector === '.action-label' ? label : null;
+  }
   const nodes = { inspection: section, 'inside-toggle': button };
   const listeners = {};
   const document = {
@@ -38,25 +43,27 @@ function run({ section = element({ 'data-inside-mode': 'inside' }), button = ele
     addEventListener(type, listener) { (listeners[type] ||= []).push(listener); },
   };
   vm.runInNewContext(fs.readFileSync(scriptPath, 'utf8'), { document }, { filename: scriptPath });
-  return { section, button, dispatchReady() { for (const listener of listeners.DOMContentLoaded || []) listener(); } };
+  return { section, button, label, dispatchReady() { for (const listener of listeners.DOMContentLoaded || []) listener(); } };
 }
 
 test('initializes visible control in surface mode and switches repeatedly', () => {
-  const { section, button } = run();
+  const { section, button, label } = run();
   assert.equal(section.dataset.insideMode, 'surface');
   assert.equal(button.hidden, false);
   assert.equal(button.getAttribute('aria-pressed'), 'false');
-  assert.equal(button.textContent.trim(), 'Показать изнутри');
+  assert.equal(label.textContent.trim(), 'Показать изнутри');
 
+  assert.equal(button.textContent, 'arrow markup', 'mode changes preserve the arrow elements');
   button.click();
   assert.equal(section.dataset.insideMode, 'inside');
   assert.equal(button.getAttribute('aria-pressed'), 'true');
-  assert.equal(button.textContent.trim(), 'Вернуться к внешнему виду');
+  assert.equal(label.textContent.trim(), 'Вернуться к внешнему виду');
+  assert.equal(button.textContent, 'arrow markup', 'toggling preserves the arrow elements');
 
   button.click();
   assert.equal(section.dataset.insideMode, 'surface');
   assert.equal(button.getAttribute('aria-pressed'), 'false');
-  assert.equal(button.textContent.trim(), 'Показать изнутри');
+  assert.equal(label.textContent.trim(), 'Показать изнутри');
 });
 
 test('waits for DOM readiness when the document is loading', () => {
@@ -154,7 +161,7 @@ function pointerEnvironment({ fine = true, reduced = false } = {}) {
     readyState: 'complete',
     getElementById() { return null; },
     querySelector() { return null; },
-    querySelectorAll(selector) { return selector === '.primary-link' ? [link] : []; },
+    querySelectorAll(selector) { return selector === '.action-link' ? [link] : []; },
   };
   const window = {
     matchMedia(query) { return query.includes('prefers-reduced-motion') ? reducedQuery : fineQuery; },

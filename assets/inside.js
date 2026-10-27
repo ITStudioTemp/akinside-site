@@ -3,10 +3,11 @@
     const illustration = document.getElementById('inspection');
     const toggle = document.getElementById('inside-toggle');
     if (illustration && toggle) {
+      const toggleLabel = toggle.querySelector('.action-label');
       function setMode(inside) {
         illustration.dataset.insideMode = inside ? 'inside' : 'surface';
         toggle.setAttribute('aria-pressed', String(inside));
-        toggle.textContent = inside ? 'Вернуться к внешнему виду' : 'Показать изнутри';
+        if (toggleLabel) toggleLabel.textContent = inside ? 'Вернуться к внешнему виду' : 'Показать изнутри';
       }
 
       setMode(false);
@@ -20,7 +21,7 @@
         typeof window.requestAnimationFrame === 'function' && typeof document.querySelectorAll === 'function') {
       const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-      document.querySelectorAll('.primary-link').forEach(link => {
+      document.querySelectorAll('.action-link').forEach(link => {
         let frame = null;
         let generation = 0;
         let x = 0;

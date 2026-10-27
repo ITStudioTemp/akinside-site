@@ -1,0 +1,18 @@
+.system-field {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-image: url("system-field.svg");
+  background-repeat: repeat;
+  background-size: 168px 168px;
+  opacity: .72;
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, .24), rgba(0, 0, 0, .75) 56%, #000);
+}
+.system-field-canvas { display: block; width: 100%; height: 100%; opacity: 0; }
+.system-field.is-rendered { background-image: none; }
+.system-field.is-rendered .system-field-canvas { opacity: 1; }
+@media (max-width: 599px) {
+  .system-field { background-size: 136px 136px; opacity: .56; }
+}
