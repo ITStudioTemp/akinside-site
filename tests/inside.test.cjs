@@ -129,3 +129,91 @@ test('process follows the viewport, clamps progress and batches scroll updates',
   assert.equal(Number(properties['--progress']), 1);
   assert.deepEqual(steps.map(step => step.classes.has('is-active')), [false, false, true]);
 });
+
+function pointerEnvironment({ fine = true, reduced = false } = {}) {
+  const events = {};
+  const properties = {};
+  const pending = [];
+  let measurements = 0;
+  const link = {
+    style: {
+      setProperty(name, value) { properties[name] = value; },
+      removeProperty(name) { delete properties[name]; },
+    },
+    getBoundingClientRect() { measurements++; return { left: 100, top: 200 }; },
+    addEventListener(type, listener) { events[type] = listener; },
+    removeEventListener(type, listener) { if (events[type] === listener) delete events[type]; },
+  };
+  const media = initial => ({
+    matches: initial,
+    addEventListener(type, listener) { if (type === 'change') this.change = listener; },
+  });
+  const fineQuery = media(fine);
+  const reducedQuery = media(reduced);
+  const document = {
+    readyState: 'complete',
+    getElementById() { return null; },
+    querySelector() { return null; },
+    querySelectorAll(selector) { return selector === '.primary-link' ? [link] : []; },
+  };
+  const window = {
+    matchMedia(query) { return query.includes('prefers-reduced-motion') ? reducedQuery : fineQuery; },
+    requestAnimationFrame(callback) { pending.push(callback); return pending.length; },
+    cancelAnimationFrame() {}, // Execute cancelled frames deliberately to expose stale writes.
+  };
+  vm.runInNewContext(fs.readFileSync(scriptPath, 'utf8'), { document, window }, { filename: scriptPath });
+  return { events, properties, pending, fineQuery, reducedQuery, measurements: () => measurements };
+}
+
+test('mouse pointer effect batches coordinates and keeps its last position on leave', () => {
+  const { events, properties, pending, measurements } = pointerEnvironment();
+  assert.equal(typeof events.pointermove, 'function');
+  events.pointermove({ pointerType: 'touch', clientX: 110, clientY: 210 });
+  assert.equal(pending.length, 0);
+  events.pointermove({ pointerType: 'mouse', clientX: 110, clientY: 220 });
+  events.pointermove({ pointerType: 'mouse', clientX: 130, clientY: 240 });
+  assert.equal(pending.length, 1);
+  assert.equal(measurements(), 0, 'geometry is read only during the animation frame');
+  pending.shift()();
+  assert.equal(measurements(), 1, 'multiple events require only one geometry read');
+  assert.equal(properties['--pointer-x'], '30px');
+  assert.equal(properties['--pointer-y'], '40px');
+  events.pointermove({ pointerType: 'mouse', clientX: 140, clientY: 250 });
+  events.pointerleave({ pointerType: 'mouse' });
+  pending.shift()();
+  assert.equal(properties['--pointer-x'], '30px');
+  assert.equal(properties['--pointer-y'], '40px');
+});
+
+test('leaving before the first frame does not write stale coordinates', () => {
+  const { events, properties, pending, measurements } = pointerEnvironment();
+  events.pointermove({ pointerType: 'mouse', clientX: 140, clientY: 250 });
+  events.pointerleave({ pointerType: 'mouse' });
+  pending.shift()();
+  assert.equal(properties['--pointer-x'], undefined);
+  assert.equal(properties['--pointer-y'], undefined);
+  assert.equal(measurements(), 0);
+});
+
+test('pointer handlers follow fine hover and reduced-motion preferences', () => {
+  for (const options of [{ fine: false }, { reduced: true }]) {
+    const state = pointerEnvironment(options);
+    assert.equal(state.events.pointermove, undefined);
+  }
+  const state = pointerEnvironment();
+  state.events.pointermove({ pointerType: 'mouse', clientX: 110, clientY: 210 });
+  state.pending.shift()();
+  assert.equal(state.properties['--pointer-x'], '10px');
+  state.events.pointermove({ pointerType: 'mouse', clientX: 120, clientY: 220 });
+  state.reducedQuery.matches = true;
+  state.reducedQuery.change();
+  assert.equal(state.events.pointermove, undefined);
+  state.pending.shift()();
+  assert.equal(state.properties['--pointer-x'], undefined);
+  state.reducedQuery.matches = false;
+  state.reducedQuery.change();
+  assert.equal(typeof state.events.pointermove, 'function');
+  state.fineQuery.matches = false;
+  state.fineQuery.change();
+  assert.equal(state.events.pointermove, undefined);
+});

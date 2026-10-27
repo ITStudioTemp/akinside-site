@@ -33,6 +33,20 @@ for (const [, name, raw] of tags) {
   if (tag === 'link' && /\b(stylesheet|icon|preload|modulepreload)\b/i.test(a.rel || '') && a.href) resources.push([a.href, 'index.html']);
 }
 for (const link of links) { let id; try { id = decodeURIComponent(link); } catch { id = link; } if (!ids.has(id)) errors.push(`Broken anchor: #${link}`); }
+const projectSection = html.match(/<section\b[^>]*\bid=["']projects["'][^>]*>([\s\S]*?)<\/section>/i);
+if (!projectSection) errors.push('Missing projects section');
+else {
+  const projectLinks = [...projectSection[1].matchAll(/<a\b([^<>]*?)>([\s\S]*?)<\/a>/gi)]
+    .map(([, raw, label]) => ({ ...attrs(raw), label: label.replace(/<[^>]*>/g, '').trim() }));
+  const requiredLinks = [
+    ['https://github.com/ITStudioTemp/akinside-site', 'Исходный код'],
+    ['https://freelance.ru/portfolio/project/view/1690759', 'Описание проекта'],
+  ];
+  for (const [href, label] of requiredLinks) {
+    if (!projectLinks.some(link => link.href === href && link.label.startsWith(label))) errors.push(`Missing project link: ${label}`);
+  }
+  if (projectLinks.some(link => /^https?:\/\/(?:www\.)?akinside\.com\/?(?:[?#].*)?$/i.test(link.href || ''))) errors.push('Project section must not link to the current site');
+}
 const toggle = tags.find(([,name,raw]) => name.toLowerCase() === 'button' && attrs(raw).id === 'inside-toggle');
 if (!toggle || !Object.hasOwn(attrs(toggle[2]), 'hidden')) errors.push('inside-toggle must be hidden in HTML for the no-JavaScript fallback');
 const checked = new Set();

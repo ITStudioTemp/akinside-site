@@ -16,6 +16,57 @@
       });
     }
 
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+        typeof window.requestAnimationFrame === 'function' && typeof document.querySelectorAll === 'function') {
+      const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      document.querySelectorAll('.primary-link').forEach(link => {
+        let frame = null;
+        let generation = 0;
+        let x = 0;
+        let y = 0;
+        let listening = false;
+
+        function stopPointer() {
+          generation += 1;
+          if (frame !== null && typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(frame);
+          frame = null;
+        }
+        function movePointer(event) {
+          if (event.pointerType !== 'mouse') return;
+          x = event.clientX;
+          y = event.clientY;
+          if (frame !== null) return;
+          const scheduledGeneration = ++generation;
+          frame = window.requestAnimationFrame(() => {
+            if (generation !== scheduledGeneration) return;
+            frame = null;
+            const bounds = link.getBoundingClientRect();
+            link.style.setProperty('--pointer-x', `${x - bounds.left}px`);
+            link.style.setProperty('--pointer-y', `${y - bounds.top}px`);
+          });
+        }
+        function updatePointerAvailability() {
+          const enabled = fineHover.matches && !reducedMotion.matches;
+          if (enabled === listening) return;
+          listening = enabled;
+          if (enabled) {
+            link.addEventListener('pointermove', movePointer);
+            link.addEventListener('pointerleave', stopPointer);
+          } else {
+            link.removeEventListener('pointermove', movePointer);
+            link.removeEventListener('pointerleave', stopPointer);
+            stopPointer();
+            link.style.removeProperty('--pointer-x');
+            link.style.removeProperty('--pointer-y');
+          }
+        }
+        if (typeof fineHover.addEventListener === 'function') fineHover.addEventListener('change', updatePointerAvailability);
+        if (typeof reducedMotion.addEventListener === 'function') reducedMotion.addEventListener('change', updatePointerAvailability);
+        updatePointerAvailability();
+      });
+    }
+
     const process = document.querySelector('.work-steps');
     if (!process) return;
     const steps = Array.from(process.querySelectorAll('li'));
