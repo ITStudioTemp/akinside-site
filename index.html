@@ -20,9 +20,12 @@
   <meta name="twitter:card" content="summary">
   <link rel="icon" href="assets/akinside-transparent.png" type="image/png">
   <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/system-field.css">
   <script src="assets/inside.js" defer></script>
+  <script src="assets/system-field.js" defer></script>
 </head>
 <body>
+  <div class="system-field" aria-hidden="true"><canvas class="system-field-canvas"></canvas></div>
   <a class="skip-link" href="#main">Перейти к содержанию</a>
   <header class="site-header layout" id="top">
     <a class="brand" href="#top" aria-label="AKinside, в начало страницы"><img src="assets/akinside-transparent.png" width="1254" height="1254" alt=""></a>
@@ -32,15 +35,16 @@
   </header>
 
   <main id="main">
-    <section class="hero layout" id="inspection" data-inside-mode="inside" aria-labelledby="hero-title">
+    <section class="hero layout" id="inspection" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="hero-kicker">AKinside. Студия разработки и проверки качества</p>
         <h1 id="hero-title">Разбираемся,<br>как всё <span>работает.</span></h1>
         <p class="hero-description">Исправляем ошибки HTML и CSS, дорабатываем статические сайты и проверяем, как они работают.</p>
-        <div class="hero-actions"><a class="primary-link" href="#contact">Обсудить проект <span aria-hidden="true">↘</span></a><a class="secondary-link" href="#projects">Посмотреть работу <span aria-hidden="true">↘</span></a></div>
+        <div class="hero-actions"><a class="action-link primary-link" href="#contact"><span class="action-label">Обсудить проект</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></a><a class="action-link secondary-link" href="#projects"><span class="action-label">Посмотреть работу</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></a></div>
       </div>
       <div class="inspection">
         <div class="inspection-title"><p>Внутри системы</p><span>Условная иллюстрация</span></div>
+        <input class="inside-fallback" id="inside-fallback" type="checkbox" aria-describedby="inspection-explanation">
         <div class="inspection-visual" aria-hidden="true">
           <svg viewBox="0 0 720 550" focusable="false" xmlns="http://www.w3.org/2000/svg">
             <g class="draft-lines" fill="none" stroke="currentColor" stroke-width="1">
@@ -54,19 +58,18 @@
               <path d="M145 190 365 79l220 111-220 112Z" stroke-width="1" opacity=".55"/>
             </g>
             <g class="system-inside" fill="none" stroke-linejoin="round">
-              <path class="layer layer-one" d="M116 172 365 46 614 172 365 298Z"/>
-              <path class="layer layer-two" d="M116 225 365 99 614 225 365 351Z"/>
-              <path class="layer layer-three" d="M116 278 365 152 614 278 365 404Z"/>
-              <path class="layer layer-four" d="M116 331 365 205 614 331 365 457Z"/>
-              <path class="route" pathLength="1" d="M237 110 309 146 309 210 391 252 391 318 476 361 476 398"/>
-              <circle class="node" cx="237" cy="110" r="8"/><circle class="node" cx="309" cy="210" r="8"/><circle class="node" cx="391" cy="318" r="8"/><circle class="node" cx="476" cy="398" r="8"/>
-              <path class="layer-detail" d="M183 171 365 80 546 171M183 224 365 133 546 224M183 277 365 186 546 277M183 330 365 239 546 330"/>
+              <g class="layer layer-one"><path d="M116 172 365 46 614 172 365 298Z"/><path class="layer-detail" d="M183 171 365 80 546 171"/></g>
+              <g class="layer layer-two"><path d="M116 225 365 99 614 225 365 351Z"/><path class="layer-detail" d="M183 224 365 133 546 224"/></g>
+              <g class="layer layer-three"><path d="M116 278 365 152 614 278 365 404Z"/><path class="layer-detail" d="M183 277 365 186 546 277"/></g>
+              <g class="layer layer-four"><path d="M116 331 365 205 614 331 365 457Z"/><path class="layer-detail" d="M183 330 365 239 546 330"/></g>
+              <g class="connections"><path class="route" pathLength="1" d="M237 110 309 146 309 210 391 252 391 318 476 361 476 398"/>
+              <circle class="node" cx="237" cy="110" r="8"/><circle class="node" cx="309" cy="210" r="8"/><circle class="node" cx="391" cy="318" r="8"/><circle class="node" cx="476" cy="398" r="8"/></g>
             </g>
           </svg>
         </div>
         <div class="inspection-controls">
           <p id="inspection-explanation">Один взгляд снаружи и то, что происходит внутри.</p>
-          <button class="inside-toggle" id="inside-toggle" type="button" aria-pressed="true" aria-describedby="inspection-explanation" hidden>Показать изнутри</button>
+          <label class="action-link action-quiet inside-fallback-label" id="inside-fallback-label" for="inside-fallback"><span class="action-label"><span class="fallback-on">Вернуться к внешнему виду</span><span class="fallback-off">Показать изнутри</span></span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></label>
         </div>
         <ol class="inspection-stages" aria-label="Условный путь работы"><li>Проблема</li><li>Диагностика</li><li>Исправление</li><li>Проверка</li></ol>
       </div>
@@ -90,7 +93,7 @@
 
     <section class="section layout projects" id="projects" aria-labelledby="projects-title">
       <div class="section-heading"><p class="section-label">Проекты</p><h2 id="projects-title">Наш первый<br>проект.</h2></div>
-      <div class="projects-content"><p class="project-type">Собственный проект студии</p><h3>Сайт AKinside</h3><p>Официальный сайт студии, на котором вы сейчас находитесь. Рассказываем о себе, направлениях работы и подходе к качеству.</p><p class="project-tech">HTML / CSS / JavaScript · GitHub Pages</p><div class="project-links"><a href="https://akinside.com/">Открыть сайт <span aria-hidden="true">↗</span></a><a href="https://freelance.ru/portfolio/project/view/1690759" target="_blank" rel="noopener noreferrer">Описание проекта на Freelance.ru <span aria-hidden="true">↗</span><span class="sr-only"> (откроется в новой вкладке)</span></a></div></div>
+      <div class="projects-content"><p class="project-type">Собственный проект студии</p><h3>Сайт AKinside</h3><p>Официальный сайт студии, на котором вы сейчас находитесь. Рассказываем о себе, направлениях работы и подходе к качеству.</p><p class="project-tech">HTML / CSS / JavaScript · GitHub Pages</p><div class="project-links"><a class="action-link action-quiet" href="https://github.com/ITStudioTemp/akinside-site" target="_blank" rel="noopener noreferrer"><span class="action-label">Исходный код</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span><span class="sr-only"> (откроется в новой вкладке)</span></a><a class="action-link action-quiet" href="https://freelance.ru/portfolio/project/view/1690759" target="_blank" rel="noopener noreferrer"><span class="action-label">Описание проекта на Freelance.ru</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span><span class="sr-only"> (откроется в новой вкладке)</span></a></div></div>
     </section>
 
     <section class="section layout" id="approach" aria-labelledby="approach-title">
@@ -116,13 +119,13 @@
 
     <section class="section layout closing" id="collaboration" aria-labelledby="collaboration-title">
       <div><p class="section-label">Сотрудничество</p><h2 id="collaboration-title">Открыты к совместной работе.</h2></div>
-      <div><p>Обсудим коммерческие задачи, партнёрство и участие специалистов в работе студии. Нам также интересны открытые проекты.</p><a class="secondary-link" href="#contact">Перейти к контактам <span aria-hidden="true">↘</span></a></div>
+      <div><p>Обсудим коммерческие задачи, партнёрство и участие специалистов в работе студии. Нам также интересны открытые проекты.</p><a class="action-link secondary-link" href="#contact"><span class="action-label">Перейти к контактам</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></a></div>
     </section>
     <section class="section layout contact" id="contact" aria-labelledby="contact-title">
       <div class="contact-intro"><p class="section-label">Контакты</p><h2 id="contact-title">Расскажите<br>о вашей задаче.</h2><p>Напишите, что требуется сделать, и приложите ссылку на сайт или описание задачи. Здесь же можно предложить сотрудничество или обсудить работу в студии.</p></div>
-      <div class="contact-options"><div class="contact-direct"><p class="contact-label">Написать напрямую</p><a class="primary-link" href="https://t.me/Psych0_g0d" target="_blank" rel="noopener noreferrer">Обсудить проект в Telegram <span aria-hidden="true">↗</span><span class="sr-only"> (откроется в новой вкладке)</span></a></div><div class="contact-platforms"><p class="contact-label">Оформить заказ через площадку</p><ul><li><a href="https://kwork.ru/user/akinside" target="_blank" rel="noopener noreferrer">Kwork <span aria-hidden="true">↗</span><span class="sr-only">, профиль AKinside (откроется в новой вкладке)</span></a></li><li><a href="https://www.fl.ru/users/playgron59/portfolio/" target="_blank" rel="noopener noreferrer">FL.ru <span aria-hidden="true">↗</span><span class="sr-only">, профиль AKinside (откроется в новой вкладке)</span></a></li><li><a href="https://freelance.ru/a27a04o24" target="_blank" rel="noopener noreferrer">Freelance.ru <span aria-hidden="true">↗</span><span class="sr-only">, профиль AKinside (откроется в новой вкладке)</span></a></li></ul></div></div>
+      <div class="contact-options"><div class="contact-direct"><p class="contact-label">Написать напрямую</p><a class="action-link primary-link" href="https://t.me/Psych0_g0d" target="_blank" rel="noopener noreferrer"><span class="action-label">Обсудить проект в Telegram</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span><span class="sr-only"> (откроется в новой вкладке)</span></a></div><div class="contact-platforms"><p class="contact-label">Оформить заказ через площадку</p><ul><li><a class="action-link action-quiet" href="https://kwork.ru/user/akinside" target="_blank" rel="noopener noreferrer"><span class="action-label">Kwork</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span><span class="sr-only">, профиль AKinside (откроется в новой вкладке)</span></a></li><li><a class="action-link action-quiet" href="https://www.fl.ru/users/playgron59/portfolio/" target="_blank" rel="noopener noreferrer"><span class="action-label">FL.ru</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span><span class="sr-only">, профиль AKinside (откроется в новой вкладке)</span></a></li><li><a class="action-link action-quiet" href="https://freelance.ru/a27a04o24" target="_blank" rel="noopener noreferrer"><span class="action-label">Freelance.ru</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span><span class="sr-only">, профиль AKinside (откроется в новой вкладке)</span></a></li></ul></div></div>
     </section>
   </main>
-  <footer class="site-footer layout"><a class="brand" href="#top" aria-label="AKinside, в начало страницы"><img src="assets/akinside-transparent.png" width="1254" height="1254" alt=""></a><a class="back-to-top" href="#top">Наверх <span aria-hidden="true">↑</span></a></footer>
+  <footer class="site-footer layout"><a class="brand" href="#top" aria-label="AKinside, в начало страницы"><img src="assets/akinside-transparent.png" width="1254" height="1254" alt=""></a><a class="action-link action-quiet back-to-top" href="#top"><span class="action-label">Наверх</span><span class="action-arrow" aria-hidden="true"><span class="arrow-current">↗</span><span class="arrow-next">↗</span></span></a></footer>
 </body>
 </html>

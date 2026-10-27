@@ -19,5 +19,6 @@ jobs:
         with:
           node-version: 24
       - run: node --check assets/inside.js
-      - run: node --test tests/inside.test.cjs
+      - run: node --check assets/system-field.js
+      - run: node --test tests/inside.test.cjs tests/system-field.test.cjs
       - run: node scripts/check-site.cjs
