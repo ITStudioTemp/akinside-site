@@ -25,6 +25,10 @@ for (const [, name, raw] of tags) {
   const a = attrs(raw);
   if (a.id) { if (ids.has(a.id)) errors.push(`Duplicate id: ${a.id}`); ids.add(a.id); }
   if (tag === 'a' && a.href && a.href.startsWith('#') && a.href !== '#') links.push(a.href.slice(1));
+  if (tag === 'a' && a.target === '_blank') {
+    const rel = new Set((a.rel || '').toLowerCase().split(/\s+/));
+    if (!rel.has('noopener') || !rel.has('noreferrer')) errors.push(`External link missing safe rel: ${a.href || '(no href)'}`);
+  }
   if (['script', 'img', 'source', 'iframe', 'video', 'audio', 'embed'].includes(tag) && a.src) resources.push([a.src, 'index.html']);
   if (tag === 'link' && /\b(stylesheet|icon|preload|modulepreload)\b/i.test(a.rel || '') && a.href) resources.push([a.href, 'index.html']);
 }
