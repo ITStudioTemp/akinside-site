@@ -6,11 +6,8 @@
   pointer-events: none;
   background-image: url("system-field.svg");
   background-repeat: repeat;
-  background-size: 128px 128px;
+  background-size: 30px 30px;
 }
 .system-field-canvas { display: block; width: 100%; height: 100%; opacity: 0; }
 .system-field.is-rendered { background-image: none; }
 .system-field.is-rendered .system-field-canvas { opacity: 1; }
-@media (max-width: 599px) {
-  .system-field { background-size: 112px 112px; }
-}

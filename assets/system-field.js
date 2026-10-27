@@ -11,8 +11,8 @@
 
   function buildGrid(width, height) {
     const mobile = width < 600;
-    const spacing = mobile ? 56 : 64;
-    const size = mobile ? 16 : 18;
+    const spacing = 30;
+    const size = 7;
     const origin = { x: width * .88, y: height * .5 };
     const maxDistance = Math.hypot(Math.max(origin.x, width - origin.x), height / 2) || 1;
     const nodes = [];
@@ -61,8 +61,9 @@
     return { opacity: 1 - ease(phase), flash: Math.sin(phase * Math.PI) };
   }
 
-  function scrollProgress(scrollY, height) {
-    return clamp(scrollY / Math.max(1, height * 1.7));
+  function scrollProgress(scrollY, documentHeight, viewportHeight) {
+    const scrollable = Math.max(0, documentHeight - viewportHeight);
+    return scrollable ? clamp(scrollY / scrollable) : 0;
   }
 
   function mount(win) {
@@ -92,34 +93,63 @@
     function draw() {
       frame = null;
       if (!field || !visible) return;
-      const progress = reduced.matches ? 0 : scrollProgress(win.scrollY, win.innerHeight);
+      const documentHeight = Math.max(doc.documentElement.scrollHeight, doc.body ? doc.body.scrollHeight : 0);
+      const progress = reduced.matches ? 0 : scrollProgress(win.scrollY, documentHeight, win.innerHeight);
       ctx.clearRect(0, 0, win.innerWidth, win.innerHeight);
       ctx.lineWidth = 1;
       const half = field.size / 2;
+      // Quantised opacity buckets batch thousands of modules into a small number
+      // of canvas paths instead of issuing a stroke for every individual edge.
+      const bins = 20;
+      const linkPaths = Array.from({ length: bins + 1 }, () => []);
+      const linkFlashPaths = Array.from({ length: bins + 1 }, () => []);
+      const nodePaths = Array.from({ length: bins + 1 }, () => []);
+      const nodeFlashPaths = Array.from({ length: bins + 1 }, () => []);
       field.links.forEach(link => {
         const state = connectionState(link, progress);
         if (state.opacity <= 0) return;
-        ctx.strokeStyle = state.flash > .02
-          ? `rgba(75, 219, 238, ${state.opacity * (.48 + state.flash * .32)})`
-          : `rgba(79, 139, 184, ${state.opacity * .48})`;
-        ctx.beginPath();
-        if (link.horizontal) {
-          ctx.moveTo(link.a.x + half, link.a.y);
-          ctx.lineTo(link.b.x - half, link.b.y);
-        } else {
-          ctx.moveTo(link.a.x, link.a.y + half);
-          ctx.lineTo(link.b.x, link.b.y - half);
-        }
-        ctx.stroke();
+        const flashing = state.flash > .02;
+        const alpha = state.opacity * (flashing ? .20 + state.flash * .05 : .30);
+        const bucket = Math.round(alpha * bins);
+        if (bucket) (flashing ? linkFlashPaths : linkPaths)[bucket].push(link);
       });
       field.nodes.forEach(node => {
         const state = nodeState(node, progress, field);
-        const flash = state.flash;
-        ctx.strokeStyle = flash > .02
-          ? `rgba(75, 219, 238, ${state.opacity * (.64 + flash * .3)})`
-          : `rgba(98, 155, 196, ${state.opacity * .64})`;
-        ctx.strokeRect(state.x - half, state.y - half, field.size, field.size);
+        const flashing = state.flash > .02;
+        const alpha = state.opacity * (flashing ? .20 + state.flash * .05 : .30);
+        const bucket = Math.round(alpha * bins);
+        if (bucket) (flashing ? nodeFlashPaths : nodePaths)[bucket].push(state);
       });
+      function drawLinks(paths, color) {
+        paths.forEach((items, bucket) => {
+          if (!items.length) return;
+          ctx.strokeStyle = `rgba(${color}, ${bucket / bins})`;
+          ctx.beginPath();
+          items.forEach(link => {
+            if (link.horizontal) {
+              ctx.moveTo(link.a.x + half, link.a.y);
+              ctx.lineTo(link.b.x - half, link.b.y);
+            } else {
+              ctx.moveTo(link.a.x, link.a.y + half);
+              ctx.lineTo(link.b.x, link.b.y - half);
+            }
+          });
+          ctx.stroke();
+        });
+      }
+      function drawNodes(paths, color) {
+        paths.forEach((items, bucket) => {
+          if (!items.length) return;
+          ctx.strokeStyle = `rgba(${color}, ${bucket / bins})`;
+          ctx.beginPath();
+          items.forEach(state => ctx.rect(state.x - half, state.y - half, field.size, field.size));
+          ctx.stroke();
+        });
+      }
+      drawLinks(linkPaths, '79, 139, 184');
+      drawLinks(linkFlashPaths, '75, 219, 238');
+      drawNodes(nodePaths, '98, 155, 196');
+      drawNodes(nodeFlashPaths, '75, 219, 238');
       host.classList.add('is-rendered');
     }
 
