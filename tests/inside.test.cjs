@@ -34,7 +34,11 @@ function run({ section = element({ 'data-inside-mode': 'inside' }), button = ele
     button.textContent = 'arrow markup';
     button.querySelector = selector => selector === '.action-label' ? label : null;
   }
-  const nodes = { inspection: section, 'inside-toggle': button };
+  const fallback = element();
+  fallback.checked = true;
+  fallback.disabled = false;
+  const fallbackLabel = element();
+  const nodes = { inspection: section, 'inside-toggle': button, 'inside-fallback': fallback, 'inside-fallback-label': fallbackLabel };
   const listeners = {};
   const document = {
     readyState,
@@ -43,13 +47,16 @@ function run({ section = element({ 'data-inside-mode': 'inside' }), button = ele
     addEventListener(type, listener) { (listeners[type] ||= []).push(listener); },
   };
   vm.runInNewContext(fs.readFileSync(scriptPath, 'utf8'), { document }, { filename: scriptPath });
-  return { section, button, label, dispatchReady() { for (const listener of listeners.DOMContentLoaded || []) listener(); } };
+  return { section, button, label, fallback, fallbackLabel, dispatchReady() { for (const listener of listeners.DOMContentLoaded || []) listener(); } };
 }
 
 test('initializes visible control in surface mode and switches repeatedly', () => {
-  const { section, button, label } = run();
+  const { section, button, label, fallback, fallbackLabel } = run();
   assert.equal(section.dataset.insideMode, 'surface');
   assert.equal(button.hidden, false);
+  assert.equal(fallback.disabled, true, 'fallback cannot override enhanced mode');
+  assert.equal(fallback.hidden, true);
+  assert.equal(fallbackLabel.hidden, true);
   assert.equal(button.getAttribute('aria-pressed'), 'false');
   assert.equal(label.textContent.trim(), 'Показать изнутри');
 
@@ -67,9 +74,13 @@ test('initializes visible control in surface mode and switches repeatedly', () =
 });
 
 test('waits for DOM readiness when the document is loading', () => {
-  const { section, button, dispatchReady } = run({ readyState: 'loading' });
+  const { section, button, fallback, fallbackLabel, dispatchReady } = run({ readyState: 'loading' });
   assert.equal(section.dataset.insideMode, 'inside');
   assert.equal(button.hidden, true);
+  assert.equal(fallback.checked, true);
+  assert.equal(fallback.disabled, false);
+  assert.equal(fallback.hidden, false);
+  assert.equal(fallbackLabel.hidden, false);
   dispatchReady();
   assert.equal(section.dataset.insideMode, 'surface');
   assert.equal(button.hidden, false);

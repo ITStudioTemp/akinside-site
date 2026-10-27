@@ -10,6 +10,13 @@
         if (toggleLabel) toggleLabel.textContent = inside ? 'Вернуться к внешнему виду' : 'Показать изнутри';
       }
 
+      const fallback = document.getElementById('inside-fallback');
+      const fallbackLabel = document.getElementById('inside-fallback-label');
+      if (fallback && fallbackLabel) {
+        fallback.disabled = true;
+        fallback.hidden = true;
+        fallbackLabel.hidden = true;
+      }
       setMode(false);
       toggle.hidden = false;
       toggle.addEventListener('click', () => {

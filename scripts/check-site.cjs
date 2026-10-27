@@ -49,6 +49,12 @@ else {
 }
 const toggle = tags.find(([,name,raw]) => name.toLowerCase() === 'button' && attrs(raw).id === 'inside-toggle');
 if (!toggle || !Object.hasOwn(attrs(toggle[2]), 'hidden')) errors.push('inside-toggle must be hidden in HTML for the no-JavaScript fallback');
+
+const fallback = tags.find(([,name,raw]) => name.toLowerCase() === 'input' && attrs(raw).id === 'inside-fallback');
+if (!fallback || attrs(fallback[2]).type !== 'checkbox' || !Object.hasOwn(attrs(fallback[2]), 'checked') || Object.hasOwn(attrs(fallback[2]), 'hidden') || Object.hasOwn(attrs(fallback[2]), 'disabled')) errors.push('No-JS illustration control must be an enabled, checked checkbox');
+const fallbackLabel = tags.find(([,name,raw]) => name.toLowerCase() === 'label' && attrs(raw).id === 'inside-fallback-label');
+if (!fallbackLabel || attrs(fallbackLabel[2]).for !== 'inside-fallback' || Object.hasOwn(attrs(fallbackLabel[2]), 'hidden')) errors.push('No-JS illustration control must have a visible associated label');
+
 const checked = new Set();
 function checkResource(ref, from) {
   if (/^(?:data:|#)/i.test(ref)) return;
