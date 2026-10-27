@@ -51,7 +51,7 @@ test('initializes visible control in surface mode and switches repeatedly', () =
   button.click();
   assert.equal(section.dataset.insideMode, 'inside');
   assert.equal(button.getAttribute('aria-pressed'), 'true');
-  assert.equal(button.textContent.trim(), 'Показать изнутри');
+  assert.equal(button.textContent.trim(), 'Вернуться к внешнему виду');
 
   button.click();
   assert.equal(section.dataset.insideMode, 'surface');

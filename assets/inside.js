@@ -7,7 +7,7 @@
     function setMode(inside) {
       illustration.dataset.insideMode = inside ? 'inside' : 'surface';
       toggle.setAttribute('aria-pressed', String(inside));
-      toggle.textContent = 'Показать изнутри';
+      toggle.textContent = inside ? 'Вернуться к внешнему виду' : 'Показать изнутри';
     }
 
     setMode(false);
