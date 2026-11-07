@@ -34,6 +34,8 @@ test('CSS keeps the visible instruction and SVG state aligned with the checkbox'
   assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-controls\s+\.fallback-off\s*\{\s*display:\s*inline/);
   assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-visual\s+\.layer\s*\{\s*opacity:\s*0/);
   assert.match(css, /#inside-fallback:not\(:checked\)\s*~\s*\.inspection-visual\s+\.connections\s*\{\s*opacity:\s*0/);
+  // Selection remains visible independently of transient hover or focus.
+  assert.match(css, /#inside-fallback:checked\s*~\s*\.inspection-controls\s+\.inside-fallback-label\s*\{[^}]*background-color:/);
   assert.doesNotMatch(js, /inside-fallback|inside-toggle|insideMode/);
 });
 

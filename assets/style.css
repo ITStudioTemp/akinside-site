@@ -113,7 +113,8 @@ h1, h2, h3, p { margin-top: 0; }
 .fallback-off { display: none; }
 #inside-fallback:not(:checked) ~ .inspection-controls .fallback-on { display: none; }
 #inside-fallback:not(:checked) ~ .inspection-controls .fallback-off { display: inline; }
-#inside-fallback:checked ~ .inspection-controls .inside-fallback-label { border-color: #78bdf5; }
+#inside-fallback:checked ~ .inspection-controls .inside-fallback-label { background-color: #25455e; border-color: #78bdf5; }
+#inside-fallback:checked ~ .inspection-controls .inside-fallback-label:active { background-color: #305470; border-color: #b3e4ff; }
 .inspection-stages { grid-row: 4; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; padding: 23px 0 0; margin: 0; list-style: none; }
 .inspection-stages li { color: var(--muted); font-size: 13px; line-height: 1.35; border-top: 2px solid #3978ac; padding-top: 9px; overflow-wrap: anywhere; }
 
@@ -194,6 +195,7 @@ h1, h2, h3, p { margin-top: 0; }
   .hero { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 32px; padding-block: 70px; }
   .hero h1 { font-size: clamp(45px, 6.4vw, 65px); }
   .inspection-controls { align-items: flex-start; flex-direction: column; }
+  .inspection-stages { grid-template-columns: repeat(2, minmax(0,1fr)); row-gap: 18px; }
   .section { padding-block: 72px; }
   .approach-layout { grid-template-columns: 1fr; gap: 40px; }
   .capabilities-main { grid-template-columns: 1fr; }
@@ -211,7 +213,6 @@ h1, h2, h3, p { margin-top: 0; }
   .hero h1 { font-size: clamp(42px, 10.4vw, 62px); letter-spacing: -.045em; }
   .hero-description { font-size: 17px; }
   .inspection-title p { font-size: 17px; }
-  .inspection-stages { grid-template-columns: repeat(2, minmax(0,1fr)); row-gap: 18px; }
   .section { padding-block: 62px 70px; }
   .section-heading, .projects, .closing, .contact { display: block; }
   .section-heading { margin-bottom: 38px; }
