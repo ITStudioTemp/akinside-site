@@ -25,12 +25,40 @@ for (const [, name, raw] of tags) {
   const a = attrs(raw);
   if (a.id) { if (ids.has(a.id)) errors.push(`Duplicate id: ${a.id}`); ids.add(a.id); }
   if (tag === 'a' && a.href && a.href.startsWith('#') && a.href !== '#') links.push(a.href.slice(1));
+  if (tag === 'a' && a.target === '_blank') {
+    const rel = new Set((a.rel || '').toLowerCase().split(/\s+/));
+    if (!rel.has('noopener') || !rel.has('noreferrer')) errors.push(`External link missing safe rel: ${a.href || '(no href)'}`);
+  }
   if (['script', 'img', 'source', 'iframe', 'video', 'audio', 'embed'].includes(tag) && a.src) resources.push([a.src, 'index.html']);
   if (tag === 'link' && /\b(stylesheet|icon|preload|modulepreload)\b/i.test(a.rel || '') && a.href) resources.push([a.href, 'index.html']);
 }
 for (const link of links) { let id; try { id = decodeURIComponent(link); } catch { id = link; } if (!ids.has(id)) errors.push(`Broken anchor: #${link}`); }
-const toggle = tags.find(([,name,raw]) => name.toLowerCase() === 'button' && attrs(raw).id === 'inside-toggle');
-if (!toggle || !Object.hasOwn(attrs(toggle[2]), 'hidden')) errors.push('inside-toggle must be hidden in HTML for the no-JavaScript fallback');
+const projectSection = html.match(/<section\b[^>]*\bid=["']projects["'][^>]*>([\s\S]*?)<\/section>/i);
+if (!projectSection) errors.push('Missing projects section');
+else {
+  const projectLinks = [...projectSection[1].matchAll(/<a\b([^<>]*?)>([\s\S]*?)<\/a>/gi)]
+    .map(([, raw, label]) => ({ ...attrs(raw), label: label.replace(/<[^>]*>/g, '').trim() }));
+  const requiredLinks = [
+    ['https://github.com/ITStudioTemp/akinside-site', 'Исходный код'],
+    ['https://freelance.ru/portfolio/project/view/1690759', 'Описание проекта'],
+  ];
+  for (const [href, label] of requiredLinks) {
+    if (!projectLinks.some(link => link.href === href && link.label.startsWith(label))) errors.push(`Missing project link: ${label}`);
+  }
+  if (projectLinks.some(link => /^https?:\/\/(?:www\.)?akinside\.com\/?(?:[?#].*)?$/i.test(link.href || ''))) errors.push('Project section must not link to the current site');
+}
+const illustration = html.match(/<div class="inspection">([\s\S]*?)<ol class="inspection-stages"/i);
+if (!illustration) errors.push('Missing illustration controls');
+else {
+  const controls = [...illustration[1].matchAll(/<(input|button|label)\b([^<>]*?)>/gi)]
+    .map(([, name, raw]) => ({ name: name.toLowerCase(), ...attrs(raw) }));
+  const checkbox = controls.filter(control => control.name === 'input');
+  const labels = controls.filter(control => control.name === 'label');
+  if (checkbox.length !== 1 || checkbox[0].id !== 'inside-fallback' || checkbox[0].type !== 'checkbox' || Object.hasOwn(checkbox[0], 'hidden') || Object.hasOwn(checkbox[0], 'disabled')) errors.push('Illustration must have one enabled native checkbox');
+  if (labels.length !== 1 || labels[0].for !== 'inside-fallback' || Object.hasOwn(labels[0], 'hidden')) errors.push('Illustration must have one visible associated label');
+  if (controls.some(control => control.name === 'button')) errors.push('Illustration must not have a second control');
+}
+
 const checked = new Set();
 function checkResource(ref, from) {
   if (/^(?:data:|#)/i.test(ref)) return;
